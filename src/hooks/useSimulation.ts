@@ -74,6 +74,7 @@ interface SimState {
   activeAlgorithm: SchedulingAlgorithm;
   timeQuantum: number;
   historicalMetrics: HistoryDataPoint[];
+  migrationCounter: number;
 }
 
 const initialState: SimState = {
@@ -85,7 +86,8 @@ const initialState: SimState = {
   globalQueue: [],
   activeAlgorithm: 'WORK_STEALING',
   timeQuantum: 15, // Default reasonable RR quantum
-  historicalMetrics: []
+  historicalMetrics: [],
+  migrationCounter: 0
 };
 
 type Action = 
@@ -103,7 +105,8 @@ function simReducer(state: SimState, action: Action): SimState {
         ...initialState,
         activeAlgorithm: state.activeAlgorithm,
         timeQuantum: state.timeQuantum,
-        cores: createInitialCores(action.coreCount)
+        cores: createInitialCores(action.coreCount),
+        migrationCounter: 0
       };
 
     case 'SET_CORE_COUNT': {
@@ -350,6 +353,7 @@ function simReducer(state: SimState, action: Action): SimState {
       });
 
       // 5. Load balancing patterns (WORK_STEALING & PUSH_PULL)
+      let tickMigrations = 0;
       if (state.activeAlgorithm === 'WORK_STEALING' || state.activeAlgorithm === 'PUSH_PULL') {
         const loads = nextCores.map(c => c.queue.length + (c.currentProcess ? 1 : 0));
         let maxLoadIdx = loads.indexOf(Math.max(...loads));
@@ -362,19 +366,35 @@ function simReducer(state: SimState, action: Action): SimState {
            if (stolen) {
              stolen.coreId = nextCores[minLoadIdx].id;
              nextCores[minLoadIdx].queue.push(stolen);
+             tickMigrations += 1;
            }
         }
       }
 
       // 6. Snapshots for Analytics Engine
+      const nextMigrationCounter = state.migrationCounter + tickMigrations;
       if (nextTick % 20 === 0) {
         const avgUtilization = nextCores.reduce((s,c) => s + c.utilization, 0) / nextCores.length;
+        // CPU Utilization Variance
+        const utilVariance = nextCores.reduce((s,c) => s + Math.pow(c.utilization - avgUtilization, 2), 0) / nextCores.length;
+        // Response Time (avg turnaround = avgWaitTime + avgBurstTime of completed)
+        const completedAll = nextCompleted;
+        const avgResponseTime = completedAll.length > 0
+          ? completedAll.reduce((s, p) => s + p.waitTime + p.burstTime, 0) / completedAll.length
+          : 0;
+        // Throughput rate (jobs per second)
+        const elapsedSeconds = (nextTick * TICK_RATE_MS) / 1000;
+        const throughputRate = elapsedSeconds > 0 ? Math.round((nextMetrics.totalThroughput / elapsedSeconds) * 100) / 100 : 0;
+
         nextHistory.push({
           tick: nextTick,
           algorithm: state.activeAlgorithm,
           avgWaitTime: nextMetrics.averageWaitTime,
-          throughput: nextMetrics.totalThroughput,
-          utilization: avgUtilization
+          throughput: throughputRate,
+          utilization: avgUtilization,
+          utilizationVariance: Math.round(utilVariance * 100) / 100,
+          responseTime: Math.round(avgResponseTime * 10) / 10,
+          migrationCount: nextMigrationCounter
         });
         if (nextHistory.length > 150) nextHistory.shift(); // Keep last 150 data points mapped
       }
@@ -388,7 +408,8 @@ function simReducer(state: SimState, action: Action): SimState {
         historicalMetrics: nextHistory,
         metrics: nextMetrics,
         activeAlgorithm: state.activeAlgorithm,
-        timeQuantum: state.timeQuantum
+        timeQuantum: state.timeQuantum,
+        migrationCounter: nextMigrationCounter
       };
     }
     default:

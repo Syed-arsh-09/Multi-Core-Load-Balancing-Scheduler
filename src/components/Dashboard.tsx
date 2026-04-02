@@ -56,10 +56,19 @@ export function Dashboard() {
   const isGlobalContext = ['FCFS', 'RR', 'SJF', 'SRTF'].includes(activeAlgorithm);
   const isWorkStealing = activeAlgorithm === 'WORK_STEALING';
 
-  const chartData = historicalMetrics.map(h => ({
-    tick: h.tick,
-    [h.algorithm]: h.avgWaitTime
-  }));
+  // Build chart data: merge all data points per tick into one object keyed by algo + metric
+  const chartData = (() => {
+    const tickMap = new Map<number, Record<string, number>>();
+    historicalMetrics.forEach(h => {
+      if (!tickMap.has(h.tick)) tickMap.set(h.tick, { tick: h.tick });
+      const entry = tickMap.get(h.tick)!;
+      entry[`${h.algorithm}_utilVar`] = h.utilizationVariance;
+      entry[`${h.algorithm}_respTime`] = h.responseTime;
+      entry[`${h.algorithm}_throughput`] = h.throughput;
+      entry[`${h.algorithm}_migration`] = h.migrationCount;
+    });
+    return Array.from(tickMap.values()).sort((a, b) => a.tick - b.tick);
+  })();
 
   return (
     <div className={`min-h-screen p-6 md:p-12 text-slate-800 relative overflow-hidden font-sans pb-20 transition-colors duration-1000 ${isWorkStealing ? 'bg-indigo-50' : 'bg-slate-50'}`}>
@@ -240,34 +249,86 @@ export function Dashboard() {
             <MetricCard title="Simulation Time" value={`${metrics.tickCount} T`} subtitle="Internal clock cycle" />
           </div>
 
-          {/* Recharts Analytics Line Chart */}
-          <div className="lg:col-span-2 glass-card bg-white border border-slate-200 rounded-2xl p-6 relative">
-            <span className="text-[11px] text-slate-500 font-bold uppercase tracking-widest absolute top-6 left-6">Historical Average Wait Time (Comparison Tracker)</span>
-            <div className="w-full h-full min-h-[250px] mt-8 pt-4">
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="tick" textAnchor="end" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={40} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
-                    labelStyle={{ fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  {ALGO_OPTIONS.map(algo => (
-                    <Line
-                      key={algo.value}
-                      type="monotone"
-                      dataKey={algo.value}
-                      stroke={algoColors[algo.value]}
-                      strokeWidth={3}
-                      dot={false}
-                      connectNulls={true}
-                      isAnimationActive={false}
-                    />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
+          {/* Benchmark Charts — 2×2 Grid */}
+          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* CPU Utilization Balance */}
+            <div className="glass-card bg-white border border-slate-200 rounded-2xl p-5 relative">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">CPU Utilization Balance</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5 mb-2">Variance between core loads — lower is better</span>
+              <div className="w-full" style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="tick" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={35} />
+                    <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
+                    <Legend iconType="plainline" layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '9px', paddingLeft: '6px', lineHeight: '16px' }} />
+                    {ALGO_OPTIONS.map(algo => (
+                      <Line key={algo.value} type="monotone" dataKey={`${algo.value}_utilVar`} name={algo.value} stroke={algoColors[algo.value]} strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Response Time / Latency */}
+            <div className="glass-card bg-white border border-slate-200 rounded-2xl p-5 relative">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Response Time / Latency</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5 mb-2">Avg turnaround time (ticks) — lower is better</span>
+              <div className="w-full" style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="tick" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={35} />
+                    <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
+                    <Legend iconType="plainline" layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '9px', paddingLeft: '6px', lineHeight: '16px' }} />
+                    {ALGO_OPTIONS.map(algo => (
+                      <Line key={algo.value} type="monotone" dataKey={`${algo.value}_respTime`} name={algo.value} stroke={algoColors[algo.value]} strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Throughput */}
+            <div className="glass-card bg-white border border-slate-200 rounded-2xl p-5 relative">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Throughput</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5 mb-2">Jobs completed per second</span>
+              <div className="w-full" style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="tick" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={35} />
+                    <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
+                    <Legend iconType="plainline" layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '9px', paddingLeft: '6px', lineHeight: '16px' }} />
+                    {ALGO_OPTIONS.map(algo => (
+                      <Line key={algo.value} type="monotone" dataKey={`${algo.value}_throughput`} name={algo.value} stroke={algoColors[algo.value]} strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Migration Overhead */}
+            <div className="glass-card bg-white border border-slate-200 rounded-2xl p-5 relative">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Migration Overhead</span>
+              <span className="block text-[10px] text-slate-400 mt-0.5 mb-2">Cumulative task migrations between cores</span>
+              <div className="w-full" style={{ height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="tick" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={35} />
+                    <Tooltip contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
+                    <Legend iconType="plainline" layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '9px', paddingLeft: '6px', lineHeight: '16px' }} />
+                    {ALGO_OPTIONS.map(algo => (
+                      <Line key={algo.value} type="monotone" dataKey={`${algo.value}_migration`} name={algo.value} stroke={algoColors[algo.value]} strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>

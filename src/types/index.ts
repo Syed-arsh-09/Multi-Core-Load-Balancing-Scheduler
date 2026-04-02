@@ -46,4 +46,7 @@ export interface HistoryDataPoint {
   avgWaitTime: number;
   throughput: number;
   utilization: number;
+  utilizationVariance: number;
+  responseTime: number;
+  migrationCount: number;
 }
