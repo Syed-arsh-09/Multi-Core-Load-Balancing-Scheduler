@@ -189,11 +189,34 @@ function simReducer(state: SimState, action: Action): SimState {
          allProcs.forEach(p => assignProcessToCoreLocal(p, nextCores, action.algo));
       }
 
+      // Bridge the chart gap: record a metric snapshot for the NEW algorithm
+      // at the current tick so there's no X-axis discontinuity on the graph.
+      const bridgeHistory = [...state.historicalMetrics];
+      const avgUtil = nextCores.reduce((s, c) => s + c.utilization, 0) / nextCores.length;
+      const utilVar = nextCores.reduce((s, c) => s + Math.pow(c.utilization - avgUtil, 2), 0) / nextCores.length;
+      const completedAll = state.completedProcesses;
+      const avgResp = completedAll.length > 0
+        ? completedAll.reduce((s, p) => s + p.waitTime + p.burstTime, 0) / completedAll.length
+        : 0;
+      const elapsed = (state.tickCount * 50) / 1000; // TICK_RATE_MS = 50
+      const tpRate = elapsed > 0 ? Math.round((state.metrics.totalThroughput / elapsed) * 100) / 100 : 0;
+      bridgeHistory.push({
+        tick: state.tickCount,
+        algorithm: action.algo,
+        avgWaitTime: state.metrics.averageWaitTime,
+        throughput: tpRate,
+        utilization: avgUtil,
+        utilizationVariance: Math.round(utilVar * 100) / 100,
+        responseTime: Math.round(avgResp * 10) / 10,
+        migrationCount: state.migrationCounter
+      });
+
       return {
         ...state,
         activeAlgorithm: action.algo,
         globalQueue: nextGlobal,
-        cores: nextCores
+        cores: nextCores,
+        historicalMetrics: bridgeHistory
       };
     }
     
@@ -373,7 +396,7 @@ function simReducer(state: SimState, action: Action): SimState {
 
       // 6. Snapshots for Analytics Engine
       const nextMigrationCounter = state.migrationCounter + tickMigrations;
-      if (nextTick % 20 === 0) {
+      if (nextTick % 5 === 0) {
         const avgUtilization = nextCores.reduce((s,c) => s + c.utilization, 0) / nextCores.length;
         // CPU Utilization Variance
         const utilVariance = nextCores.reduce((s,c) => s + Math.pow(c.utilization - avgUtilization, 2), 0) / nextCores.length;
@@ -396,7 +419,7 @@ function simReducer(state: SimState, action: Action): SimState {
           responseTime: Math.round(avgResponseTime * 10) / 10,
           migrationCount: nextMigrationCounter
         });
-        if (nextHistory.length > 150) nextHistory.shift(); // Keep last 150 data points mapped
+        if (nextHistory.length > 600) nextHistory.shift(); // Keep last 600 data points
       }
 
       return {

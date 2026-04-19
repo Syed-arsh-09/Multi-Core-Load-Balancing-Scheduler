@@ -1,7 +1,10 @@
 {
   "name": "multicore-scheduler",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Interactive Multi-Core CPU Scheduling Simulator with real-time visualization of 8 scheduling algorithms",
+  "author": "Syed Arsh",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

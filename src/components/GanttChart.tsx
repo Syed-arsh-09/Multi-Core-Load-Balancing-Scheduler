@@ -4,19 +4,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function GanttChart({ completedProcesses, isAntiGravity = false }: { completedProcesses: Process[], isAntiGravity?: boolean }) {
   if (completedProcesses.length === 0) {
     return (
-      <div className={`glass-card rounded-2xl p-8 z-10 relative flex items-center justify-center min-h-[150px] border transition-all duration-1000 ${isAntiGravity ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white border-slate-200'}`}>
-        <span className="text-slate-400 font-mono tracking-widest text-sm uppercase">No processes completed yet</span>
+      <div className={`glass-card rounded-xl p-3 z-10 relative flex items-center justify-center border transition-all duration-1000 ${isAntiGravity ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white border-slate-200'}`}>
+        <span className="text-slate-400 font-mono tracking-widest text-[10px] uppercase">No completed processes</span>
       </div>
     );
   }
 
   return (
-    <div className={`glass-card rounded-2xl p-6 z-10 relative mt-6 flex flex-col border transition-all duration-1000 ${isAntiGravity ? 'bg-indigo-50/40 border-indigo-200 shadow-[0_4px_20px_rgba(99,102,241,0.05)]' : 'bg-white border-slate-200'}`}>
-      <h3 className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-4 font-heading border-b border-slate-100 pb-3">
-        Completion History (Last 30)
+    <div className={`glass-card rounded-xl p-2 z-10 relative flex flex-col border transition-all duration-1000 ${isAntiGravity ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white border-slate-200'}`} style={{ overflow: 'visible' }}>
+      <h3 className="text-slate-500 text-[9px] font-bold uppercase tracking-widest mb-1.5 px-1">
+        Completed (Last 30)
       </h3>
       
-      <div className="flex flex-wrap gap-2 animate-in fade-in duration-500 mt-2">
+      <div className="flex flex-wrap gap-1" style={{ overflow: 'visible' }}>
         <AnimatePresence>
           {completedProcesses.map((p) => (
             <motion.div
@@ -25,18 +25,19 @@ export function GanttChart({ completedProcesses, isAntiGravity = false }: { comp
               animate={{ scale: 1, opacity: 1 }}
               key={p.id}
               className="flex flex-col items-center group cursor-pointer relative"
+              style={{ overflow: 'visible' }}
             >
               <div 
-                className="h-10 w-14 overflow-hidden rounded-lg border border-slate-200 flex items-center justify-center text-[10px] font-mono text-slate-800 font-bold transition-all hover:-translate-y-1 shadow-sm hover:shadow-md"
+                className="h-7 w-10 overflow-hidden rounded border border-slate-200 flex items-center justify-center text-[8px] font-mono text-slate-800 font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md"
                 style={{ backgroundColor: `${p.color}20` }}
               >
-                {p.id.length > 5 ? p.id.substring(0, 5) : p.id}
+                {p.id.length > 4 ? p.id.substring(0, 4) : p.id}
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-12 bg-slate-800 p-2 rounded-md text-[10px] whitespace-nowrap pointer-events-none border border-slate-700 z-50 text-white shadow-xl flex flex-col items-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-800 p-1.5 rounded text-[9px] whitespace-nowrap pointer-events-none border border-slate-700 z-[100] text-white shadow-xl flex flex-col items-center">
                 <span>Core: <b className="text-blue-300">{p.coreId}</b> | Wait: {p.waitTime}t</span>
-                <span className="text-slate-300 mt-0.5">PID: {p.id} | AT: {p.arrivalTime} | Prio: {p.priority} | BT: {p.burstTime}</span>
+                <span className="text-slate-300 mt-0.5">PID: {p.id} | BT: {p.burstTime}</span>
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
               </div>
-              <span className="text-[9px] text-slate-400 mt-1 font-mono font-medium">{p.burstTime}t</span>
             </motion.div>
           ))}
         </AnimatePresence>
