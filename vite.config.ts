@@ -8,4 +8,6 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+
+  base: process.env.VITE_BASE_PATH || "/Multi-Core-Load-Balancing-Scheduler"
 })
