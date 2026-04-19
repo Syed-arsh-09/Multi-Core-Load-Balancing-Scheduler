@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useSimulation } from '../hooks/useSimulation';
 import { CoreVisualizer } from './CoreVisualizer';
 import { GanttChart } from './GanttChart';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { Play, Pause, RefreshCw, Zap, Plus, Settings2, Clock, Activity, ChevronDown } from 'lucide-react';
 import type { SchedulingAlgorithm } from '../types';
 
