@@ -101,7 +101,7 @@ export function Dashboard() {
       <div className={`fixed top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none transition-colors duration-1000 z-0 opacity-[0.05] ${isWorkStealing ? 'bg-indigo-600' : 'bg-blue-600'}`} />
 
       {/* ===== TOP BAR ===== */}
-      <header className={`flex items-center justify-between gap-4 px-5 py-2.5 border-b z-40 relative shrink-0 ${isWorkStealing ? 'bg-indigo-50/60 border-indigo-200' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
+      <header className={`flex flex-col lg:flex-row items-center justify-between gap-4 px-5 py-3 lg:py-2.5 border-b z-40 relative shrink-0 ${isWorkStealing ? 'bg-indigo-50/60 border-indigo-200' : 'bg-white/80 border-slate-200'} backdrop-blur-sm`}>
         {/* Left: Title */}
         <h1 className="text-xl font-black text-slate-900 tracking-tight whitespace-nowrap shrink-0">Multi-Core OS</h1>
 
@@ -156,7 +156,7 @@ export function Dashboard() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center justify-center gap-2 shrink-0">
           <button onClick={toggleAutoSpawn} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition border min-w-[100px] ${isAutoSpawn ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
             <Settings2 size={14} /> Auto {isAutoSpawn ? 'ON' : 'OFF'}
           </button>
@@ -164,7 +164,7 @@ export function Dashboard() {
             <Zap size={14} className="fill-blue-500 text-blue-500" /> Random
           </button>
 
-          <div className="h-6 w-px bg-slate-200" />
+          <div className="hidden lg:block h-6 w-px bg-slate-200" />
 
           <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1">
             <input type="text" value={customPid} onChange={e => setCustomPid(e.target.value)} className="w-12 px-1.5 py-0.5 text-xs rounded bg-white border border-slate-300 font-mono" placeholder="PID" />
@@ -176,7 +176,7 @@ export function Dashboard() {
             </button>
           </div>
 
-          <div className="h-6 w-px bg-slate-200" />
+          <div className="hidden lg:block h-6 w-px bg-slate-200" />
 
           <button onClick={reset} className="p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-800 rounded-lg transition">
             <RefreshCw size={16} className={isRunning ? "animate-spin" : ""} />
@@ -193,7 +193,7 @@ export function Dashboard() {
 
       {/* GLOBAL QUEUE BAR (conditional) */}
       {isGlobalContext && (
-        <div className={`flex items-center gap-3 px-5 py-1.5 border-b shrink-0 ${isWorkStealing ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white/60 border-slate-200'}`}>
+        <div className={`flex flex-col sm:flex-row items-center sm:justify-start justify-center gap-2 sm:gap-3 px-5 py-2 sm:py-1.5 border-b shrink-0 ${isWorkStealing ? 'bg-indigo-50/40 border-indigo-200' : 'bg-white/60 border-slate-200'}`}>
           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider shrink-0">Ready Queue</span>
           <div className="flex flex-wrap gap-1.5 overflow-x-auto">
             {globalQueue.length === 0 ? (
@@ -210,10 +210,10 @@ export function Dashboard() {
       )}
 
       {/* ===== MAIN CONTENT — Cores LEFT, Charts RIGHT ===== */}
-      <div className="flex-1 flex gap-2.5 p-2.5 overflow-hidden relative z-10 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 lg:gap-2.5 p-2.5 overflow-y-auto lg:overflow-hidden relative z-10 min-h-0">
 
         {/* LEFT PANEL: Cores */}
-        <div className="w-[55%] flex flex-col gap-2 min-h-0 min-w-0">
+        <div className="w-full lg:w-[55%] flex flex-col gap-2 min-h-0 shrink-0 lg:shrink-1">
           {/* Pending Arrivals */}
           {pendingArrivals.length > 0 && (
             <div className="flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-semibold py-1.5 px-4 rounded-lg border border-blue-200 shrink-0">
@@ -223,7 +223,7 @@ export function Dashboard() {
           )}
 
           {/* Core Grid */}
-          <div className="flex-1 grid grid-cols-2 gap-2 overflow-y-auto min-h-0" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2 overflow-y-auto min-h-0" style={{ gridAutoRows: 'minmax(0, 1fr)' }}>
             {cores.map(core => (
               <CoreVisualizer key={core.id} core={core} isAntiGravity={isWorkStealing} />
             ))}
@@ -231,7 +231,7 @@ export function Dashboard() {
         </div>
 
         {/* RIGHT PANEL: Metrics + Charts + Gantt */}
-        <div className="w-[45%] flex flex-col gap-2 min-h-0 min-w-0">
+        <div className="w-full lg:w-[45%] flex flex-col gap-2 min-h-0 shrink-0 lg:shrink flex-1 lg:flex-none mb-10 lg:mb-0">
 
           {/* Metrics Row */}
           <div className="flex gap-2 shrink-0">
@@ -241,7 +241,7 @@ export function Dashboard() {
           </div>
 
           {/* 2×2 Chart Grid — each chart expands from its own corner on hover */}
-          <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1 min-h-[500px] lg:min-h-0">
             {CHART_DEFS.map((chart, idx) => {
               const isHovered = hoveredChart === chart.id;
               return (
