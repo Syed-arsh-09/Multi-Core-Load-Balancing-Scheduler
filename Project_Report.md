@@ -34,6 +34,7 @@ A dedicated subsystem tracking historical execution metrics. It captures through
 - **Per-Core Dashboards:** Live display of CPU utilization percentages, currently running processes, and exact queue lengths.
 - **Gantt Chart Timeline:** An animated timeline tracking the last 30 completed processes, including detailed tooltips displaying Time spent waiting and specific core assignments.
 - **Custom Parameter Entry:** Allows users to inject manually defined processes specifying exact burst times, arrival times, and priorities.
+- **Responsive Layout:** Adaptive styling built to handle multithreading visualization flawlessly across both desktop and single-column mobile screens without clipping.
 
 **Analytics & Benchmarking:**
 - **Live Line Charts:** Plots CPU Utilization Balance, Response Time, Throughput, and Migration Overhead.
