@@ -35,12 +35,12 @@ const CHART_DEFS = [
   { id: 'migration', title: 'Migration', subtitle: 'Cumulative task migrations between cores', suffix: '_migration', accent: '#3b82f6', yLabel: 'Count' },
 ];
 
-/* Position styles for each chart's expanded state — anchored to its own corner */
-const EXPAND_POSITIONS: React.CSSProperties[] = [
-  { top: 0, left: 0, width: '130%', height: '125%' },       // top-left → expands right & down
-  { top: 0, right: 0, width: '130%', height: '125%' },      // top-right → expands left & down
-  { bottom: 0, left: 0, width: '130%', height: '125%' },    // bottom-left → expands right & up
-  { bottom: 0, right: 0, width: '130%', height: '125%' },   // bottom-right → expands left & up
+/* Responsive Tailwind classes for each chart's expanded state — anchored to appropriate corners on desktop */
+const EXPAND_CLASSES = [
+  'top-0 left-0 w-full md:w-[130%] h-[240px] md:h-[125%]',       // top-left → expands right & down
+  'top-0 right-0 w-full md:w-[130%] h-[240px] md:h-[125%]',      // top-right → expands left & down
+  'bottom-0 left-0 w-full md:w-[130%] h-[240px] md:h-[125%]',    // bottom-left → expands right & up
+  'bottom-0 right-0 w-full md:w-[130%] h-[240px] md:h-[125%]',   // bottom-right → expands left & up
 ];
 
 export function Dashboard() {
@@ -274,8 +274,8 @@ export function Dashboard() {
                   {/* ── Expanded Chart (positioned from this chart's corner) ── */}
                   {isHovered && (
                     <div
-                      className="absolute bg-white rounded-xl shadow-2xl p-3 flex flex-col animate-zoom-in"
-                      style={{ ...EXPAND_POSITIONS[idx], borderWidth: '2px', borderStyle: 'solid', borderColor: chart.accent }}
+                      className={`absolute bg-white rounded-xl shadow-2xl p-3 flex flex-col animate-zoom-in z-50 ${EXPAND_CLASSES[idx]}`}
+                      style={{ borderWidth: '2px', borderStyle: 'solid', borderColor: chart.accent }}
                       onMouseEnter={() => showZoom(chart.id)}
                       onMouseLeave={() => setHoveredChart(null)}
                     >
