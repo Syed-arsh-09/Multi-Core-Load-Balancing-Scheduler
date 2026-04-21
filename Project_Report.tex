@@ -11,6 +11,7 @@
 \usepackage{fancyhdr}
 \usepackage{verbatim}
 \usepackage{tikz}
+\usepackage{svg}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds}
 
 % Define a dark-accented color for section rule lines
@@ -126,6 +127,48 @@ Tooling Environment & Node.js / Vite & Bundling and highly optimal local server 
 \end{scope}
 \end{tikzpicture}
 \caption{Logical System Flow and Module Organization}
+\end{figure}
+
+\section{Data Flow Diagrams}
+The following analytical models visually decompose the system architecture into precise data flow operations and queues.
+
+\subsection{Level 0: Context Diagram}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{Dfds/Multi-Core Scheduling-2026-04-21-151735.png}
+\caption{Level 0 DFD: System Context Interactivity}
+\end{figure}
+
+\subsection{Level 1: Subsystem Architecture}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{Dfds/Multi-Core Scheduling-2026-04-21-151728.png}
+\caption{Level 1 DFD: Major Functional Processes \& Data Queues}
+\end{figure}
+
+\subsection{Level 2: Deep Component Breakdowns}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{Dfds/Multi-Core Scheduling-2026-04-21-151719.png}
+\caption{Level 2.1 DFD: Task Dispatcher \& Queue Manager}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{Dfds/Multi-Core Scheduling-2026-04-21-151707.png}
+\caption{Level 2.2 DFD: Core Execution Engine Lifecycle}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{Dfds/Multi-Core Scheduling-2026-04-21-151653.png}
+\caption{Level 2.3 DFD: Dynamic Load Balancer}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{Dfds/Multi-Core Scheduling-2026-04-21-151904.png}
+\caption{Level 2.4 DFD: Real-Time Metrics Aggregator}
 \end{figure}
 
 \section{Revision Tracking on GitHub}
