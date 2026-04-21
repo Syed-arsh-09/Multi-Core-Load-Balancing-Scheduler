@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## Commit History
 
+- **2026-04-21 22:29:42 +0530** - docs: update project report and include data flow diagrams
 - **2026-04-21 00:17:00 +0530** - docs: finalize LaTeX project report formatting, Overleaf compatibility, and adjust authors
 - **2026-04-20 22:12:56 +0530** - docs: add responsive layout functionality to project report
 - **2026-04-20 22:00:49 +0530** - fix(dashboard): resolve mobile chart truncation with responsive tailwind classes
