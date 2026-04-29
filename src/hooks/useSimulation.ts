@@ -1,8 +1,8 @@
 import { useEffect, useRef, useReducer, useCallback, useState } from 'react';
 import type { Core, Process, SimulationMetrics, SchedulingAlgorithm, HistoryDataPoint } from '../types';
 
-const TICK_RATE_MS = 50; 
-const PROCESS_SPAWN_CHANCE = 0.05; // Lowered to 5% per tick to maintain stable system capacity (prevents queues from infinitely growing)
+const TICK_RATE_MS = 50;
+const PROCESS_SPAWN_CHANCE = 0.40; // Lowered to 40% per tick to maintain stable system capacity (prevents queues from infinitely growing)
 
 const generateId = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 const randomColor = () => {
@@ -24,7 +24,7 @@ const createInitialCores = (count = 4): Core[] => {
 };
 
 const createProcess = (
-  tickCount: number, 
+  tickCount: number,
   customProps?: { id?: string; burstTime?: number; arrivalTime?: number; priority?: number }
 ): Process => {
   const burst = customProps?.burstTime && customProps.burstTime > 0 ? customProps.burstTime : Math.floor(Math.random() * 40) + 20;
@@ -69,7 +69,7 @@ interface SimState {
   cores: Core[];
   metrics: SimulationMetrics;
   completedProcesses: Process[];
-  pendingArrivals: Process[]; 
+  pendingArrivals: Process[];
   globalQueue: Process[];
   activeAlgorithm: SchedulingAlgorithm;
   timeQuantum: number;
@@ -90,7 +90,7 @@ const initialState: SimState = {
   migrationCounter: 0
 };
 
-type Action = 
+type Action =
   | { type: 'TICK'; autoSpawn: boolean }
   | { type: 'RESET'; coreCount: number }
   | { type: 'SET_ALGO'; algo: SchedulingAlgorithm }
@@ -111,7 +111,7 @@ function simReducer(state: SimState, action: Action): SimState {
 
     case 'SET_CORE_COUNT': {
       if (action.count === state.cores.length || action.count < 1) return state;
-      const nextCores = state.cores.map(c => ({...c, queue: [...c.queue]}));
+      const nextCores = state.cores.map(c => ({ ...c, queue: [...c.queue] }));
       const nextGlobal = [...state.globalQueue];
 
       if (action.count > state.cores.length) {
@@ -140,8 +140,8 @@ function simReducer(state: SimState, action: Action): SimState {
           });
         });
 
-        if (!['FCFS','RR','SJF','SRTF'].includes(state.activeAlgorithm)) {
-          while(nextGlobal.length > 0) {
+        if (!['FCFS', 'RR', 'SJF', 'SRTF'].includes(state.activeAlgorithm)) {
+          while (nextGlobal.length > 0) {
             let p = nextGlobal.shift()!;
             assignProcessToCoreLocal(p, nextCores, state.activeAlgorithm);
           }
@@ -154,14 +154,14 @@ function simReducer(state: SimState, action: Action): SimState {
         globalQueue: nextGlobal
       };
     }
-    
+
     case 'SET_ALGO': {
       if (action.algo === state.activeAlgorithm) return state;
 
-      const isGlobalTarget = ['FCFS','RR','SJF','SRTF'].includes(action.algo);
-      const wasGlobal = ['FCFS','RR','SJF','SRTF'].includes(state.activeAlgorithm);
+      const isGlobalTarget = ['FCFS', 'RR', 'SJF', 'SRTF'].includes(action.algo);
+      const wasGlobal = ['FCFS', 'RR', 'SJF', 'SRTF'].includes(state.activeAlgorithm);
       let nextGlobal = [...state.globalQueue];
-      let nextCores = state.cores.map(c => ({...c, queue: [...c.queue]}));
+      let nextCores = state.cores.map(c => ({ ...c, queue: [...c.queue] }));
 
       // Queue State Migration
       if (isGlobalTarget && !wasGlobal) {
@@ -180,13 +180,13 @@ function simReducer(state: SimState, action: Action): SimState {
           assignProcessToCoreLocal(p, nextCores, action.algo);
         }
       } else if (!isGlobalTarget && !wasGlobal && action.algo === 'AFFINITY') {
-         // Migrating from local to local with Affinity
-         // Re-hash everything
-         let allProcs: Process[] = [];
-         nextCores.forEach(c => {
-            while (c.queue.length > 0) allProcs.push(c.queue.shift()!);
-         });
-         allProcs.forEach(p => assignProcessToCoreLocal(p, nextCores, action.algo));
+        // Migrating from local to local with Affinity
+        // Re-hash everything
+        let allProcs: Process[] = [];
+        nextCores.forEach(c => {
+          while (c.queue.length > 0) allProcs.push(c.queue.shift()!);
+        });
+        allProcs.forEach(p => assignProcessToCoreLocal(p, nextCores, action.algo));
       }
 
       // Bridge the chart gap: record a metric snapshot for the NEW algorithm
@@ -219,7 +219,7 @@ function simReducer(state: SimState, action: Action): SimState {
         historicalMetrics: bridgeHistory
       };
     }
-    
+
     case 'SET_TIME_QUANTUM': {
       return { ...state, timeQuantum: Math.max(1, action.quantum) };
     }
@@ -231,44 +231,44 @@ function simReducer(state: SimState, action: Action): SimState {
         arrivalTime: action.arrivalTime,
         priority: action.priority
       });
-      
+
       if (newProcess.arrivalTime > state.tickCount) {
         return {
           ...state,
           pendingArrivals: [...state.pendingArrivals, newProcess].sort((a, b) => a.arrivalTime - b.arrivalTime)
         };
-      } 
+      }
 
       const nextGlobal = [...state.globalQueue];
-      const nextCores = [...state.cores.map(c => ({...c, queue: [...c.queue]}))];
-      
-      if (['FCFS','RR','SJF','SRTF'].includes(state.activeAlgorithm)) {
+      const nextCores = [...state.cores.map(c => ({ ...c, queue: [...c.queue] }))];
+
+      if (['FCFS', 'RR', 'SJF', 'SRTF'].includes(state.activeAlgorithm)) {
         nextGlobal.push(newProcess);
       } else {
         assignProcessToCoreLocal(newProcess, nextCores, state.activeAlgorithm);
       }
-      
+
       return { ...state, cores: nextCores, globalQueue: nextGlobal };
     }
 
     case 'TICK': {
       let nextTick = state.tickCount + 1;
       let nextCores = state.cores.map(c => ({ ...c, queue: [...c.queue] }));
-      let nextGlobal = [...state.globalQueue.map(p => ({ ...p, waitTime: p.waitTime + 1}))];
+      let nextGlobal = [...state.globalQueue.map(p => ({ ...p, waitTime: p.waitTime + 1 }))];
       let nextCompleted = [...state.completedProcesses];
       let nextPending = [...state.pendingArrivals];
       let nextHistory = [...state.historicalMetrics];
-      let nextMetrics = { 
-        ...state.metrics, 
-        tickCount: nextTick 
+      let nextMetrics = {
+        ...state.metrics,
+        tickCount: nextTick
       };
 
       // 0. Dispatch processes that officially arrived this tick
       const readyToDispatch = nextPending.filter(p => p.arrivalTime <= nextTick);
       nextPending = nextPending.filter(p => p.arrivalTime > nextTick);
-      
+
       readyToDispatch.forEach(p => {
-        if (['FCFS','RR','SJF','SRTF'].includes(state.activeAlgorithm)) {
+        if (['FCFS', 'RR', 'SJF', 'SRTF'].includes(state.activeAlgorithm)) {
           nextGlobal.push(p);
         } else {
           assignProcessToCoreLocal(p, nextCores, state.activeAlgorithm);
@@ -278,7 +278,7 @@ function simReducer(state: SimState, action: Action): SimState {
       // 1. Process Generation (Auto Spawn)
       if (action.autoSpawn && Math.random() < PROCESS_SPAWN_CHANCE) {
         const newProcess = createProcess(nextTick);
-        if (['FCFS','RR','SJF','SRTF'].includes(state.activeAlgorithm)) {
+        if (['FCFS', 'RR', 'SJF', 'SRTF'].includes(state.activeAlgorithm)) {
           nextGlobal.push(newProcess);
         } else {
           assignProcessToCoreLocal(newProcess, nextCores, state.activeAlgorithm);
@@ -289,7 +289,7 @@ function simReducer(state: SimState, action: Action): SimState {
       if (state.activeAlgorithm === 'FCFS' || state.activeAlgorithm === 'RR') {
         // FCFS and RR use simple arrival time queue behavior, do nothing (Queue naturally maintains order)
       } else if (state.activeAlgorithm === 'SJF') {
-        nextGlobal.sort((a, b) => a.burstTime - b.burstTime); 
+        nextGlobal.sort((a, b) => a.burstTime - b.burstTime);
       } else if (state.activeAlgorithm === 'SRTF') {
         nextGlobal.sort((a, b) => a.remainingTime - b.remainingTime);
       } else if (state.activeAlgorithm === 'CFS') {
@@ -299,10 +299,10 @@ function simReducer(state: SimState, action: Action): SimState {
       // 3. Execution Phase
       nextCores = nextCores.map(core => {
         let c = { ...core };
-        
+
         // Update waiting times inside local queues
-        c.queue = c.queue.map(p => ({ 
-          ...p, 
+        c.queue = c.queue.map(p => ({
+          ...p,
           waitTime: p.waitTime + 1,
           vruntime: state.activeAlgorithm === 'CFS' ? p.vruntime - (p.priority * 0.05) : p.vruntime
         }));
@@ -312,50 +312,50 @@ function simReducer(state: SimState, action: Action): SimState {
           p.remainingTime -= 1;
           p.timeInQuantum += 1;
           if (state.activeAlgorithm === 'CFS') p.vruntime += 1;
-          
+
           if (p.remainingTime <= 0) {
             // Process Finished
             p.state = 'completed';
             nextCompleted.push(p);
             if (nextCompleted.length > 50) nextCompleted.shift(); // Keep last 50
-            
+
             nextMetrics.totalThroughput += 1;
-            nextMetrics.averageWaitTime = 
-              ((nextMetrics.averageWaitTime * (nextMetrics.totalThroughput - 1)) + p.waitTime) 
+            nextMetrics.averageWaitTime =
+              ((nextMetrics.averageWaitTime * (nextMetrics.totalThroughput - 1)) + p.waitTime)
               / nextMetrics.totalThroughput;
-            
+
             c.totalProcessedCount += 1;
             c.currentProcess = null;
           } else {
-             // Preemption Checking
-             let preempt = false;
-             if (state.activeAlgorithm === 'RR' && p.timeInQuantum >= state.timeQuantum) {
-               preempt = true;
-             } else if (state.activeAlgorithm === 'SRTF' && nextGlobal.length > 0 && nextGlobal[0].remainingTime < p.remainingTime) {
-               preempt = true;
-             } else if (state.activeAlgorithm === 'CFS' && c.queue.length > 0 && c.queue[0].vruntime < p.vruntime - 5) { // vruntime delta of 5
-               preempt = true;
-             }
+            // Preemption Checking
+            let preempt = false;
+            if (state.activeAlgorithm === 'RR' && p.timeInQuantum >= state.timeQuantum) {
+              preempt = true;
+            } else if (state.activeAlgorithm === 'SRTF' && nextGlobal.length > 0 && nextGlobal[0].remainingTime < p.remainingTime) {
+              preempt = true;
+            } else if (state.activeAlgorithm === 'CFS' && c.queue.length > 0 && c.queue[0].vruntime < p.vruntime - 5) { // vruntime delta of 5
+              preempt = true;
+            }
 
-             if (preempt) {
-               p.state = 'waiting';
-               p.timeInQuantum = 0;
-               if (['RR','SRTF'].includes(state.activeAlgorithm)) {
-                 p.coreId = null;
-                 nextGlobal.push(p);
-               } else {
-                 c.queue.push(p); // Re-queues local
-               }
-               c.currentProcess = null;
-             } else {
-               c.currentProcess = p; // Continue running
-             }
+            if (preempt) {
+              p.state = 'waiting';
+              p.timeInQuantum = 0;
+              if (['RR', 'SRTF'].includes(state.activeAlgorithm)) {
+                p.coreId = null;
+                nextGlobal.push(p);
+              } else {
+                c.queue.push(p); // Re-queues local
+              }
+              c.currentProcess = null;
+            } else {
+              c.currentProcess = p; // Continue running
+            }
           }
         }
 
         // 4. Fill Idle Cores
         if (!c.currentProcess) {
-          if (['FCFS','RR','SJF','SRTF'].includes(state.activeAlgorithm)) {
+          if (['FCFS', 'RR', 'SJF', 'SRTF'].includes(state.activeAlgorithm)) {
             if (nextGlobal.length > 0) {
               c.currentProcess = nextGlobal.shift()!;
               c.currentProcess.coreId = c.id;
@@ -368,7 +368,7 @@ function simReducer(state: SimState, action: Action): SimState {
             }
           }
         }
-        
+
         const isBusy = c.currentProcess ? 100 : 0;
         c.utilization = (c.utilization * 0.95) + (isBusy * 0.05);
 
@@ -381,25 +381,25 @@ function simReducer(state: SimState, action: Action): SimState {
         const loads = nextCores.map(c => c.queue.length + (c.currentProcess ? 1 : 0));
         let maxLoadIdx = loads.indexOf(Math.max(...loads));
         let minLoadIdx = loads.indexOf(Math.min(...loads));
-        
-        const threshold = state.activeAlgorithm === 'PUSH_PULL' ? 1 : 2; 
-        
+
+        const threshold = state.activeAlgorithm === 'PUSH_PULL' ? 1 : 2;
+
         if (loads[maxLoadIdx] - loads[minLoadIdx] >= threshold && nextCores[maxLoadIdx].queue.length > 0) {
-           const stolen = nextCores[maxLoadIdx].queue.pop();
-           if (stolen) {
-             stolen.coreId = nextCores[minLoadIdx].id;
-             nextCores[minLoadIdx].queue.push(stolen);
-             tickMigrations += 1;
-           }
+          const stolen = nextCores[maxLoadIdx].queue.pop();
+          if (stolen) {
+            stolen.coreId = nextCores[minLoadIdx].id;
+            nextCores[minLoadIdx].queue.push(stolen);
+            tickMigrations += 1;
+          }
         }
       }
 
       // 6. Snapshots for Analytics Engine
       const nextMigrationCounter = state.migrationCounter + tickMigrations;
       if (nextTick % 5 === 0) {
-        const avgUtilization = nextCores.reduce((s,c) => s + c.utilization, 0) / nextCores.length;
+        const avgUtilization = nextCores.reduce((s, c) => s + c.utilization, 0) / nextCores.length;
         // CPU Utilization Variance
-        const utilVariance = nextCores.reduce((s,c) => s + Math.pow(c.utilization - avgUtilization, 2), 0) / nextCores.length;
+        const utilVariance = nextCores.reduce((s, c) => s + Math.pow(c.utilization - avgUtilization, 2), 0) / nextCores.length;
         // Response Time (avg turnaround = avgWaitTime + avgBurstTime of completed)
         const completedAll = nextCompleted;
         const avgResponseTime = completedAll.length > 0
@@ -442,8 +442,8 @@ function simReducer(state: SimState, action: Action): SimState {
 
 export function useSimulation() {
   const [isRunning, setIsRunning] = useState(false);
-  const [isAutoSpawn, setIsAutoSpawn] = useState(false); 
-  
+  const [isAutoSpawn, setIsAutoSpawn] = useState(false);
+
   const [state, dispatch] = useReducer(simReducer, initialState);
   const intervalRef = useRef<number | null>(null);
 
@@ -478,7 +478,7 @@ export function useSimulation() {
   const setAlgorithm = (algo: SchedulingAlgorithm) => dispatch({ type: 'SET_ALGO', algo });
   const setTimeQuantum = (quantum: number) => dispatch({ type: 'SET_TIME_QUANTUM', quantum });
   const setCoreCount = (count: number) => dispatch({ type: 'SET_CORE_COUNT', count });
-  
+
   const addProcess = (params?: { id?: string; burstTime?: number; arrivalTime?: number; priority?: number }) => {
     dispatch({ type: 'ADD_PROCESS', ...params });
   };
